@@ -1,10 +1,8 @@
-"use client"; // จำเป็นมาก เพราะมี State และ Event Handler
+"use client";
 
 import { useState } from "react";
 import { Button } from "../ui/button";
-import { truncate } from "fs";
 
-// Helper component เล็กๆ สำหรับช่องกรอกข้อมูล
 const FormField = ({ id, label, type = "text", placeholder, required = true }: any) => (
   <div>
     <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-2">
@@ -23,30 +21,35 @@ const FormField = ({ id, label, type = "text", placeholder, required = true }: a
 
 
 export const OrderForm = () => {
-  // สร้าง State สำหรับจัดการสถานะของฟอร์ม (UX ที่ดี)
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const form = e.currentTarget;
+
     setStatus("submitting");
 
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries());
 
-    // --- นี่คือจุดที่คุณ (Full Stack Dev) จะเชื่อมต่อ Backend ---
-    // สร้าง API Route (`/api/contact`) เพื่อรับ data นี้
-    // แล้วยิงไปที่ Line Notify หรือ Google Sheets
-    console.log("Form Data:", data);
-    
-    // จำลองการส่งข้อมูล (ปกติจะใช้ fetch)
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
 
-    // ถ้าสำเร็จ
-    setStatus("success");
-    e.currentTarget.reset(); // ล้างฟอร์ม
+      if (!res.ok) throw new Error('Submission failed');
 
-    // ถ้าล้มเหลว:
-    // setStatus("error");
+      setStatus("success");
+      form.reset(); 
+
+    } catch (error) {
+      console.error(error);
+      setStatus("error");
+    }
   };
 
   if (status === "success") {
